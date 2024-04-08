@@ -1,0 +1,47 @@
+﻿@model Admins
+@{
+    ViewData["Title"] = "Register Admin";
+}
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Registration </title>
+</head>
+<body>
+    <div class="Register">
+        <div class="wrapper">
+            <h2>Admin Registration</h2>
+
+            @if (!String.IsNullOrEmpty(ViewBag.Message))
+            {
+                <div>@ViewBag.Message</div>
+            }
+
+            @using (Html.BeginForm())
+            {
+                /*@Html.LabelFor(m => m.AdminId)
+                @Html.DisplayFor(m => m.AdminId)
+                <br>*/
+
+                @Html.LabelFor(m => m.Id)
+                @Html.TextBoxFor(m => m.Id)
+                <br>
+
+                @Html.LabelFor(m => m.username)
+                @Html.TextBoxFor(m => m.username)
+                <br>
+
+                @Html.LabelFor(m => m.password)
+                @Html.PasswordFor(m => m.password)
+                <br>
+
+                <input type="submit" value="Register Admin" asp-controller="Register" asp-action="RegisterAdmin">
+            }
+
+        </div>
+    </div>
+</body>
+</html>
+

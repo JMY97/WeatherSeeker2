@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Success Page";
+}
+<h1>@ViewData["Title"]</h1>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Success Page</title>
+</head>
+<body>
+    <h2>Successful Registration</h2><br />
+    @if (!String.IsNullOrEmpty(ViewBag.Message))
+    {
+        <div>@ViewBag.Message</div>
+    }
+</body>

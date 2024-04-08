@@ -1,0 +1,38 @@
+﻿@using System.Security.Claims;
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    
+</head>
+<body>
+    <div class="Register">
+        <div class="wrapper">
+            <h2>@ViewData["Title"]</h2>
+
+            @if (!String.IsNullOrEmpty(ViewBag.Message))
+            {
+                <div>@ViewBag.Message</div>
+            }
+            @using (Html.BeginForm())
+            {
+                @Html.LabelFor(m => m.Username)
+                @Html.TextBoxFor(m => m.Username)
+                <br>
+
+                @Html.LabelFor(m => m.Password)
+                @Html.PasswordFor(m => m.Password)
+                <br>
+
+                <input type="submit" value="Login" asp-controller="Login" asp-action="Login">
+            }
+        </div>
+    </div>
+</body>
+</html>

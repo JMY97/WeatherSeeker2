@@ -1,0 +1,113 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Weather App Project</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <style>
+        .container
+        {
+            margin: auto;
+            
+        }
+    </style>
+    <header><h1>Weather Seeker</h1></header>
+    @if (!String.IsNullOrEmpty(ViewBag.Message))
+    {
+        <div style="color: white">@ViewBag.Message</div>
+    }
+    <div class="container">
+        <div class="weather-input">
+            <h3>Enter a City Name</h3>
+            <input class="city-input" type="text" placeholder="E.g., New York, London, Tokyo">
+            <button class="search-btn">Search</button>
+            <div class="separator"></div>
+            <button class="location-btn">Use Current Location</button>
+        </div>
+        
+        <div class="weather-input">
+            <h3>Enter a Temperature in Celsius</h3>
+            <input class="Cels-input" type="number" id="celsius" placeholder="Degrees">
+            <button type="button" id="calc" onclick="calcTemp()">Calculate</button><br /><br />
+            <script>
+                function calcTemp() {
+
+                    // initialising
+                    let celsius = document.getElementById("celsius").value;
+                    let fahrenheit;
+
+                    // formula for conversion
+                    fahrenheit = (celsius * 1.8) + 32;
+
+                    // Print to Page
+                    console.log(fahrenheit);
+                    document.getElementById("output").textContent = fahrenheit;
+                    return false;
+                }
+            </script>
+            <h2><output class="Cels-output" type="number" id="output">Results</output>
+            <style>
+                p {
+                    display: inline;
+                }
+            </style>
+            <p>°F</p>
+            </h2>
+            
+        </div>
+        <div class="weather-data">
+            <div class="current-weather">
+                <div class="details">
+                    <h2>_______ ( ______ )</h2>
+                    <h6>Temperature: __°C</h6>
+                    <h6>Wind: __ M/S</h6>
+                    <h6>Humidity: __%</h6>
+                </div>
+            </div>
+            <div class="days-forecast">
+                <h2>5-Day Forecast</h2>
+                <ul class="weather-cards">
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Temp: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Temp: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Temp: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Temp: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                    <li class="card">
+                        <h3>( ______ )</h3>
+                        <h6>Temp: __C</h6>
+                        <h6>Wind: __ M/S</h6>
+                        <h6>Humidity: __%</h6>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

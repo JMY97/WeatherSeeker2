@@ -1,0 +1,32 @@
+﻿@model Users
+
+@{
+    ViewBag.Title = "Insert User";
+}
+
+<body>
+    <div class="Register">
+        <div class="wrapper">
+    <h2>Add User to System</h2>
+    <h3>*Remember Your Id*</h3>
+
+    @if (!String.IsNullOrEmpty(ViewBag.Message))
+    {
+    <div>@ViewBag.Message</div>
+    }
+
+@using (Html.BeginForm())
+{
+    /*@Html.LabelFor(m => m.Id)
+    //@Html.TextBoxFor(m => m.Id)
+    <br>*/
+
+    @Html.LabelFor(m => m.name)
+    @Html.TextBoxFor(m => m.name)
+    <br>
+
+                <input type="submit" value="Submit" asp-controller="Register" asp-action="RegisterUser">
+}
+        </div>
+    </div>
+</body>
