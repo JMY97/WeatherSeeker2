@@ -1,101 +1,32 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+﻿using Microsoft.AspNetCore.Mvc;
 using WebApp1.Models;
 using Microsoft.Data.SqlClient;
-using System.Data;
 
 
 namespace WebApp1.Controllers
 {
     public class LoginController : Controller
     {
-        // GET: LoginController
-        public ActionResult Index()
+        private readonly IConfiguration _configuration;
+
+        public LoginController(IConfiguration configuration)
         {
-            return RedirectToAction("Index", "Home"); ;
+            _configuration = configuration;
         }
 
-        // GET: LoginController/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
-        }
-
-        // GET: LoginController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: LoginController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: LoginController/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: LoginController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: LoginController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: LoginController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
+        [HttpGet]
         public ActionResult Login()
         {
             return RedirectToAction("Login", "Home");
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Login(LoginViewModel model)
         {
             if (ModelState.IsValid)
             {
-                string connectionString = "Data Source=weatherseeker2.database.windows.net;Initial Catalog=WeatherSeeker2;User ID=WeatherSeeker2;Password=WeatherMan2!;Trust Server Certificate=True";
+                string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
 
                 string SelectQuery = "SELECT username, password FROM Admins WHERE username = @username AND password = @password UNION ALL SELECT username, password FROM Clients WHERE username = @username AND password = @password";
 
@@ -127,7 +58,7 @@ namespace WebApp1.Controllers
                 if (username == model.Username && password == model.Password)
                 {
                     ViewBag.Message = "Welcome to Weather Seeker";
-                    return Index();
+                    return RedirectToAction("Index", "Home");
                 }
                 else
                 {

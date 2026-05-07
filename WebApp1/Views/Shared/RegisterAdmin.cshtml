@@ -19,8 +19,9 @@
                 <div>@ViewBag.Message</div>
             }
 
-            @using (Html.BeginForm())
+            @using (Html.BeginForm("RegisterAdmin", "Register", FormMethod.Post))
             {
+                @Html.AntiForgeryToken()
                 /*@Html.LabelFor(m => m.AdminId)
                 @Html.DisplayFor(m => m.AdminId)
                 <br>*/
@@ -37,7 +38,7 @@
                 @Html.PasswordFor(m => m.password)
                 <br>
 
-                <input type="submit" value="Register Admin" asp-controller="Register" asp-action="RegisterAdmin">
+                <input type="submit" value="Register Admin">
             }
 
         </div>

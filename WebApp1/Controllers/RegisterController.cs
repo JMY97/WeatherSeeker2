@@ -2,13 +2,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using WebApp1.Models;
-using System.Web;
-using System.Linq;
 
 namespace WebApp1.Controllers
 {
     public class RegisterController : Controller
     {
+        private readonly IConfiguration _configuration;
+
+        public RegisterController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
         public ActionResult Success()
         {
             //ViewBag.Message = "Data inserted successfully";
@@ -23,12 +28,13 @@ namespace WebApp1.Controllers
             return RedirectToAction("RegisterClient", "Home");
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult RegisterClient(Clients user)
         {
             if (ModelState.IsValid)
             {
                 // Insert data into database
-                string connectionString = "Data Source=weatherseeker2.database.windows.net;Initial Catalog=WeatherSeeker2;User ID=WeatherSeeker2;Password=WeatherMan2!;Trust Server Certificate=True";
+                string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
                 string insertQuery = "INSERT INTO Clients(Id, username, password) VALUES(@Id, @username, @password)";
                 string SelectQuery = "SELECT ClientId FROM Clients Where username = @username AND Id = @Id Order By ClientId Desc";
 
@@ -79,17 +85,19 @@ namespace WebApp1.Controllers
             return RegisterClient();
         }
 
+        [HttpGet]
         public IActionResult RegisterAdmin()
         {
             return RedirectToAction("RegisterAdmin", "Home");
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult RegisterAdmin(Admins user)
         {
             if (ModelState.IsValid)
             {
                 // Insert data into database
-                string connectionString = "Data Source=weatherseeker2.database.windows.net;Initial Catalog=WeatherSeeker2;User ID=WeatherSeeker2;Password=WeatherMan2!;Trust Server Certificate=True";
+                string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
                 string insertQuery = "INSERT INTO Admins(Id, username, password) VALUES(@Id, @username, @password)";
                 string SelectQuery = "SELECT AdminId FROM Admins Where username = @username AND Id = @Id Order By AdminId Desc";
                 int Id = 0;
@@ -147,12 +155,13 @@ namespace WebApp1.Controllers
             return RedirectToAction("UserPage", "Home");
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult RegisterUser(Users user)
         {
             if (ModelState.IsValid)
             {
                 // Insert data into database using ADO.NET
-                string connectionString = "Data Source=weatherseeker2.database.windows.net;Initial Catalog=WeatherSeeker2;User ID=WeatherSeeker2;Password=WeatherMan2!;Trust Server Certificate=True";
+                string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
                 string insertQuery = "INSERT INTO Users(name) VALUES(@name)";
                 string SelectQuery = "SELECT Id FROM Users Where name = @name Order By Id Desc";
 

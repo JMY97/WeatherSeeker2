@@ -13,40 +13,51 @@ namespace WebApp1.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
         public IActionResult Index()
         {
             ViewBag.message = "Welcome to Weather Seeker";
             return View();
             
         }
+
+        [HttpGet]
         public IActionResult About()
         {
             return View();
         }
+
+        [HttpGet]
         public IActionResult Privacy()
         {
             return View();
         }
 
+        [HttpGet]
         public IActionResult RegisterClient()
         {
             return View();
         }
 
+        [HttpGet]
         public IActionResult RegisterAdmin()
         {
             return View();
         }
 
+        [HttpGet]
         public IActionResult UserPage()
         {
             return View();
         }
 
+        [HttpGet]
         public IActionResult SuccessPage()
         {
             return View();
         }
+
+        [HttpGet]
         public IActionResult Login()
         {
             return View();
