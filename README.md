@@ -12,31 +12,25 @@ ASP.NET MVC weather search application with cookie-based authentication.
 ## Docker Quick Start
 
 1. Copy `.env.example` to `.env` and set secure values.
-2. Build and run:
+2. Create an OpenWeatherMap account and generate an API key from `https://openweathermap.org/api`.
+3. Set `OPENWEATHERMAP__APIKEY` in `.env` so the weather search UI can call OpenWeatherMap.
+4. Build and run:
 
 ```powershell
 docker compose up -d --build
 ```
 
-3. Open `http://localhost:8080`.
+5. Open `http://localhost:8080`.
 
 For Cloudflare deployment steps, see `DEPLOYMENT-CLOUDFLARE.md`.
 
 ## Production Setup
 
-### 1) Configure connection string by environment
+### 1) Configure database settings in `.env`
 
-- Development uses `appsettings.Development.json`.
-- Production uses `ConnectionStrings__DefaultConnection` environment variable (recommended) or `appsettings.Production.json`.
-- Keep production secrets out of source control.
-
-PowerShell example:
-
-```powershell
-$env:ASPNETCORE_ENVIRONMENT="Production"
-$env:ConnectionStrings__DefaultConnection="Host=<host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;SSL Mode=Require;Trust Server Certificate=false"
-dotnet run --project .\WebApp1\WebApp1.csproj
-```
+- Copy `.env.example` to `.env` and fill in `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD`.
+- For production TLS, set `POSTGRES_SSL_MODE=Require`.
+- The app loads `.env` during local startup, and Docker Compose uses the same file for container configuration.
 
 ### 2) Create a new deployment database
 
@@ -49,7 +43,6 @@ Option A (recommended): apply EF migrations
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT="Production"
-$env:ConnectionStrings__DefaultConnection="Host=<host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;SSL Mode=Require;Trust Server Certificate=false"
 
 # from repo root
 & "$env:USERPROFILE\.dotnet\tools\dotnet-ef" database update --project .\WebApp1\WebApp1.csproj --startup-project .\WebApp1\WebApp1.csproj
@@ -84,4 +77,5 @@ psql -h <host> -p 5432 -U <user> -d <db> -f .\WebApp1\Migrations\InitialPostgres
 
 - If you already have plaintext passwords in the database from older builds, those accounts need a password reset or migration to hashed values before they can log in.
 - The app runs `Database.Migrate()` at startup, so it can initialize/upgrade schema automatically when the configured account has DDL permissions.
-- The default database name in `.env.example` and the Docker Compose connection string is `weatherseeker`; keep `POSTGRES_DB` and the `Database=` field in the connection string in sync.
+- The default database name in `.env.example` is `weatherseeker`; keep `POSTGRES_DB` aligned with the database you actually provision.
+- Weather data comes from OpenWeatherMap. Set `OPENWEATHERMAP__APIKEY` in `.env` for Docker and local runs.

@@ -1,4 +1,7 @@
-﻿<!DOCTYPE html>
+﻿@using System.Text.Json
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -76,6 +79,11 @@
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        window.weatherSeekerConfig = {
+            openWeatherMapApiKey: @Html.Raw(JsonSerializer.Serialize(Configuration["OpenWeatherMap:ApiKey"]))
+        };
+    </script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

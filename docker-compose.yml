@@ -26,7 +26,13 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
-      ConnectionStrings__DefaultConnection: ${CONNECTIONSTRINGS__DEFAULTCONNECTION:-Host=postgres;Port=5432;Database=weatherseeker;Username=weatherseeker;Password=change-this-password;SSL Mode=Disable}
+      POSTGRES_HOST: ${POSTGRES_HOST:-postgres}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-weatherseeker}
+      POSTGRES_USER: ${POSTGRES_USER:-weatherseeker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+      POSTGRES_SSL_MODE: ${POSTGRES_SSL_MODE:-Disable}
+      OpenWeatherMap__ApiKey: ${OPENWEATHERMAP__APIKEY:-}
     ports:
       - "8080:8080"
 

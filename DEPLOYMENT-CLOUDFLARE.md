@@ -22,14 +22,15 @@ Copy-Item .env.example .env
 
 Edit `.env` and set at minimum:
 
+- `POSTGRES_HOST`
+- `POSTGRES_PORT`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
-- `CONNECTIONSTRINGS__DEFAULTCONNECTION`
+- `POSTGRES_SSL_MODE`
+- `OPENWEATHERMAP__APIKEY` (from `https://openweathermap.org/api`)
 
-Recommended connection string for Compose networking:
-
-```text
-Host=postgres;Port=5432;Database=weatherseeker;Username=weatherseeker;Password=<your-password>;SSL Mode=Disable
-```
+For Docker Compose on the default network, keep `POSTGRES_HOST=postgres` unless you intentionally rename the database service.
 
 ## 3) Run application + database
 
