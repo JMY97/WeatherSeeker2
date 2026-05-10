@@ -13,11 +13,36 @@ PowerShell example:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT="Production"
-$env:ConnectionStrings__DefaultConnection="Server=tcp:<server>.database.windows.net,1433;Initial Catalog=<db>;User ID=<user>;Password=<password>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
+$env:ConnectionStrings__DefaultConnection="Host=<host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;SSL Mode=Require;Trust Server Certificate=false"
 dotnet run --project .\WebApp1\WebApp1.csproj
 ```
 
-### 2) Cloudflare deployment checklist
+### 2) Create a new deployment database
+
+An initial migration and SQL script are included:
+
+- Migration: `WebApp1/Migrations/20260510165804_InitialPostgresSchema.cs`
+- SQL script: `WebApp1/Migrations/InitialPostgresSchema.sql`
+
+Option A (recommended): apply EF migrations
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Production"
+$env:ConnectionStrings__DefaultConnection="Host=<host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;SSL Mode=Require;Trust Server Certificate=false"
+
+# from repo root
+& "$env:USERPROFILE\.dotnet\tools\dotnet-ef" database update --project .\WebApp1\WebApp1.csproj --startup-project .\WebApp1\WebApp1.csproj
+```
+
+Option B: run SQL directly
+
+```powershell
+# replace placeholders and run on your PostgreSQL target
+$env:PGPASSWORD="<password>"
+psql -h <host> -p 5432 -U <user> -d <db> -f .\WebApp1\Migrations\InitialPostgresSchema.sql
+```
+
+### 3) Cloudflare deployment checklist
 
 - DNS: point your domain record to your origin.
 - SSL/TLS mode: set to `Full (strict)`.
@@ -26,7 +51,7 @@ dotnet run --project .\WebApp1\WebApp1.csproj
 - App config: forwarded headers are enabled in startup so original client IP/protocol are respected.
 - Cookies: auth cookie is set `Secure`, `HttpOnly`, and `SameSite=Lax`.
 
-### 3) Authentication security
+### 4) Authentication security
 
 - Passwords are stored as one-way hashes using ASP.NET Core `PasswordHasher`.
 - Login verifies hashed passwords and creates a secure cookie-authenticated session.
@@ -35,3 +60,4 @@ dotnet run --project .\WebApp1\WebApp1.csproj
 ## Notes
 
 - If you already have plaintext passwords in the database from older builds, those accounts need a password reset or migration to hashed values before they can log in.
+- The app now runs `Database.Migrate()` at startup, so it can initialize/upgrade schema automatically when the configured account has DDL permissions.
