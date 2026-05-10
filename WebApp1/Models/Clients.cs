@@ -5,7 +5,6 @@ namespace WebApp1.Models
     {
         [Key]
         public int ClientId { get; set; }
-        [Required]
         public int Id { get; set; }
         [Required]
         public required string username { get; set; }

@@ -33,6 +33,7 @@ namespace WebApp1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterClient(Clients user)
         {
+            ModelState.Remove("Id");
             if (ModelState.IsValid)
             {
                 var existingClient = await _dbContext.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.username == user.username);
@@ -42,6 +43,11 @@ namespace WebApp1.Controllers
                     ViewBag.Message = "Username is already taken.";
                     return View(user);
                 }
+
+                var newUser = new Users { name = user.username };
+                _dbContext.Users.Add(newUser);
+                await _dbContext.SaveChangesAsync();
+                user.Id = newUser.Id;
 
                 user.password = _passwordHasher.HashPassword(user.username, user.password);
                 _dbContext.Clients.Add(user);
@@ -65,6 +71,7 @@ namespace WebApp1.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegisterAdmin(Admins user)
         {
+            ModelState.Remove("Id");
             if (ModelState.IsValid)
             {
                 var existingAdmin = await _dbContext.Admins.AsNoTracking().FirstOrDefaultAsync(a => a.username == user.username);
@@ -74,6 +81,11 @@ namespace WebApp1.Controllers
                     ViewBag.Message = "Username is already taken.";
                     return View(user);
                 }
+
+                var newUser = new Users { name = user.username };
+                _dbContext.Users.Add(newUser);
+                await _dbContext.SaveChangesAsync();
+                user.Id = newUser.Id;
 
                 user.password = _passwordHasher.HashPassword(user.username, user.password);
                 _dbContext.Admins.Add(user);

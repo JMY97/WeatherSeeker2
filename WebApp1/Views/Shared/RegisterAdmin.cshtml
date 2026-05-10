@@ -22,13 +22,6 @@
             @using (Html.BeginForm("RegisterAdmin", "Register", FormMethod.Post))
             {
                 @Html.AntiForgeryToken()
-                /*@Html.LabelFor(m => m.AdminId)
-                @Html.DisplayFor(m => m.AdminId)
-                <br>*/
-
-                @Html.LabelFor(m => m.Id)
-                @Html.TextBoxFor(m => m.Id)
-                <br>
 
                 @Html.LabelFor(m => m.username)
                 @Html.TextBoxFor(m => m.username)

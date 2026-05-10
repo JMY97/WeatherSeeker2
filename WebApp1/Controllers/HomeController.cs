@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
 using WebApp1.Models;
 
@@ -14,6 +15,7 @@ namespace WebApp1.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public IActionResult Index()
         {
             ViewBag.message = "Welcome to Weather Seeker";
@@ -58,8 +60,13 @@ namespace WebApp1.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult Login()
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return View();
         }
 

@@ -23,6 +23,10 @@ namespace WebApp1.Controllers
         [HttpGet]
         public ActionResult Login()
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return RedirectToAction("Login", "Home");
         }
 
