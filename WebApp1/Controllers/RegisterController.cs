@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.SqlClient;
 using WebApp1.Models;
 
@@ -8,6 +9,7 @@ namespace WebApp1.Controllers
     public class RegisterController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly PasswordHasher<string> _passwordHasher = new();
 
         public RegisterController(IConfiguration configuration)
         {
@@ -37,6 +39,7 @@ namespace WebApp1.Controllers
                 string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
                 string insertQuery = "INSERT INTO Clients(Id, username, password) VALUES(@Id, @username, @password)";
                 string SelectQuery = "SELECT ClientId FROM Clients Where username = @username AND Id = @Id Order By ClientId Desc";
+                string hashedPassword = _passwordHasher.HashPassword(user.username, user.password);
 
                 int Id = 0;
                 using (SqlConnection connection = new SqlConnection(connectionString))
@@ -46,7 +49,7 @@ namespace WebApp1.Controllers
                     //command.Parameters.AddWithValue("@ClientId", user.ClientId);
                     command.Parameters.AddWithValue("@Id", user.Id);
                     command.Parameters.AddWithValue("@username", user.username);
-                    command.Parameters.AddWithValue("@password", user.password);
+                    command.Parameters.AddWithValue("@password", hashedPassword);
 
                     connection.Open();
                     if (Id != user.Id)
@@ -54,7 +57,6 @@ namespace WebApp1.Controllers
                         command.ExecuteNonQuery();
                         command2.Parameters.AddWithValue("@Id", user.Id);
                         command2.Parameters.AddWithValue("@username", user.username);
-                        command2.Parameters.AddWithValue("@password", user.password);
                         command2.ExecuteNonQuery();
                         using (var reader = command2.ExecuteReader())
                         {
@@ -100,6 +102,7 @@ namespace WebApp1.Controllers
                 string connectionString = _configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Missing DefaultConnection connection string.");
                 string insertQuery = "INSERT INTO Admins(Id, username, password) VALUES(@Id, @username, @password)";
                 string SelectQuery = "SELECT AdminId FROM Admins Where username = @username AND Id = @Id Order By AdminId Desc";
+                string hashedPassword = _passwordHasher.HashPassword(user.username, user.password);
                 int Id = 0;
                 
                 using (SqlConnection connection = new SqlConnection(connectionString))
@@ -109,7 +112,7 @@ namespace WebApp1.Controllers
                     //command.Parameters.AddWithValue("@AdminId", user.AdminId);
                     command.Parameters.AddWithValue("@Id", user.Id);
                     command.Parameters.AddWithValue("@username", user.username);
-                    command.Parameters.AddWithValue("@password", user.password);
+                    command.Parameters.AddWithValue("@password", hashedPassword);
 
                     connection.Open();
                     if(@Id != user.Id)
@@ -117,7 +120,6 @@ namespace WebApp1.Controllers
                         command.ExecuteNonQuery();
                         command2.Parameters.AddWithValue("@Id", user.Id);
                         command2.Parameters.AddWithValue("@username", user.username);
-                        command2.Parameters.AddWithValue("@password", user.password);
                         command2.ExecuteNonQuery();
                         using (var reader = command2.ExecuteReader())
                         {
