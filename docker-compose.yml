@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: weatherseeker-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-weatherseeker}
+      POSTGRES_USER: ${POSTGRES_USER:-weatherseeker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-weatherseeker} -d ${POSTGRES_DB:-weatherseeker}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  webapp:
+    build:
+      context: .
+      dockerfile: WebApp1/Dockerfile
+    container_name: weatherseeker-webapp
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__DefaultConnection: ${CONNECTIONSTRINGS__DEFAULTCONNECTION:-Host=postgres;Port=5432;Database=weatherseeker;Username=weatherseeker;Password=change-this-password;SSL Mode=Disable}
+    ports:
+      - "8080:8080"
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: weatherseeker-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+    depends_on:
+      - webapp
+    profiles:
+      - cloudflare
+
+volumes:
+  postgres_data:

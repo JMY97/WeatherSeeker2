@@ -1,6 +1,19 @@
 # WeatherSeeker2
 Uses Asp.net MVC to faciliate website
 
+## Docker Quick Start
+
+1. Copy `.env.example` to `.env` and set secure values.
+2. Build and run:
+
+```powershell
+docker compose up -d --build
+```
+
+3. Open `http://localhost:8080`.
+
+For Cloudflare deployment steps, see `DEPLOYMENT-CLOUDFLARE.md`.
+
 ## Production Setup
 
 ### 1) Configure connection string by environment
