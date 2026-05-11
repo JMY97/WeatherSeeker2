@@ -1,133 +1,93 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using WebApp1.Models;
-using Microsoft.Data.SqlClient;
-using System.Data;
+using WebApp1.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 
 namespace WebApp1.Controllers
 {
     public class LoginController : Controller
     {
-        // GET: LoginController
-        public ActionResult Index()
+        private readonly DBContext _dbContext;
+        private readonly PasswordHasher<string> _passwordHasher = new();
+
+        public LoginController(DBContext dbContext)
         {
-            return RedirectToAction("Index", "Home"); ;
+            _dbContext = dbContext;
         }
 
-        // GET: LoginController/Details/5
-        public ActionResult Details(int id)
-        {
-            return View();
-        }
-
-        // GET: LoginController/Create
-        public ActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: LoginController/Create
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: LoginController/Edit/5
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        // POST: LoginController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: LoginController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: LoginController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
+        [HttpGet]
         public ActionResult Login()
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                return RedirectToAction("Index", "Home");
+            }
             return RedirectToAction("Login", "Home");
         }
 
         [HttpPost]
-        public IActionResult Login(LoginViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (ModelState.IsValid)
             {
-                string connectionString = "Data Source=weatherseeker2.database.windows.net;Initial Catalog=WeatherSeeker2;User ID=WeatherSeeker2;Password=WeatherMan2!;Trust Server Certificate=True";
+                string? username = null;
+                string? userType = null;
+                var hasValidPassword = false;
 
-                string SelectQuery = "SELECT username, password FROM Admins WHERE username = @username AND password = @password UNION ALL SELECT username, password FROM Clients WHERE username = @username AND password = @password";
-
-                string username = "Username";
-                string password = "Password";
-
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                var admin = await _dbContext.Admins.AsNoTracking().FirstOrDefaultAsync(a => a.username == model.Username);
+                if (admin != null)
                 {
-                    SqlCommand command = new SqlCommand(SelectQuery, connection);
-                    command.Parameters.AddWithValue("@username", model.Username);
-                    command.Parameters.AddWithValue("@password", model.Password);
-
-                    connection.Open();
-                    command.ExecuteNonQuery();
-
-                    using (var reader = command.ExecuteReader())
+                    var adminVerify = _passwordHasher.VerifyHashedPassword(admin.username, admin.password, model.Password);
+                    if (adminVerify == PasswordVerificationResult.Success || adminVerify == PasswordVerificationResult.SuccessRehashNeeded)
                     {
-                        //Check the reader has data:
-                        if (reader.Read())
-                        {
-                            username = reader.GetString(reader.GetOrdinal("username"));
-                            password = reader.GetString(reader.GetOrdinal("password"));
-
-                        }
-
+                        username = admin.username;
+                        userType = "Admin";
+                        hasValidPassword = true;
                     }
-
                 }
-                if (username == model.Username && password == model.Password)
+
+                if (!hasValidPassword)
                 {
+                    var client = await _dbContext.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.username == model.Username);
+                    if (client != null)
+                    {
+                        var clientVerify = _passwordHasher.VerifyHashedPassword(client.username, client.password, model.Password);
+                        if (clientVerify == PasswordVerificationResult.Success || clientVerify == PasswordVerificationResult.SuccessRehashNeeded)
+                        {
+                            username = client.username;
+                            userType = "Client";
+                            hasValidPassword = true;
+                        }
+                    }
+                }
+
+                if (hasValidPassword && username != null)
+                {
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, username),
+                        new Claim(ClaimTypes.Role, userType ?? "User")
+                    };
+                    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    var authProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = true,
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                    };
+
+                    await HttpContext.SignInAsync(
+                        CookieAuthenticationDefaults.AuthenticationScheme,
+                        new ClaimsPrincipal(claimsIdentity),
+                        authProperties);
+
                     ViewBag.Message = "Welcome to Weather Seeker";
-                    return Index();
+                    return RedirectToAction("Index", "Home");
                 }
                 else
                 {
@@ -139,6 +99,14 @@ namespace WebApp1.Controllers
 
             ViewBag.Message = "There are some errors on the page";
             return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Home");
         }
     }
 }

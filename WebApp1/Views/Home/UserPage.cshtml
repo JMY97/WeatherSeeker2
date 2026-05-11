@@ -8,15 +8,15 @@
     <div class="Register">
         <div class="wrapper">
     <h2>Add User to System</h2>
-    <h3>*Remember Your Id*</h3>
 
     @if (!String.IsNullOrEmpty(ViewBag.Message))
     {
     <div>@ViewBag.Message</div>
     }
 
-@using (Html.BeginForm())
+@using (Html.BeginForm("RegisterUser", "Register", FormMethod.Post))
 {
+    @Html.AntiForgeryToken()
     //@Html.LabelFor(m => m.Id)
     //@Html.TextBoxFor(m => m.Id)
     //<br>
@@ -25,7 +25,7 @@
     @Html.TextBoxFor(m => m.name)
     <br>
 
-                <input type="submit" value="Submit" asp-controller="Register" asp-action="RegisterUser">
+                <input type="submit" value="Submit">
 }
         </div>
     </div>

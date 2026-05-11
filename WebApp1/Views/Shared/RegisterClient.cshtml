@@ -20,15 +20,9 @@
                 <div>@ViewBag.Message</div>
             }
 
-            @using (Html.BeginForm())
+            @using (Html.BeginForm("RegisterClient", "Register", FormMethod.Post))
             {
-                /*@Html.LabelFor(m => m.ClientId)
-                @Html.DisplayFor(m => m.ClientId)
-                <br>*/
-
-                @Html.LabelFor(m => m.Id)
-                @Html.TextBoxFor(m => m.Id)
-                <br>
+                @Html.AntiForgeryToken()
 
                 @Html.LabelFor(m => m.username)
                 @Html.TextBoxFor(m => m.username)
@@ -38,7 +32,7 @@
                 @Html.PasswordFor(m => m.password)
                 <br>
 
-                <input type="submit" value="Register Client" asp-controller="Register" asp-action="RegisterClient">
+                                <input type="submit" value="Register Client">
             }
       </div>
     </div>

@@ -20,8 +20,9 @@
             {
                 <div>@ViewBag.Message</div>
             }
-            @using (Html.BeginForm())
+            @using (Html.BeginForm("Login", "Login", FormMethod.Post))
             {
+                @Html.AntiForgeryToken()
                 @Html.LabelFor(m => m.Username)
                 @Html.TextBoxFor(m => m.Username)
                 <br>
@@ -30,7 +31,7 @@
                 @Html.PasswordFor(m => m.Password)
                 <br>
 
-                <input type="submit" value="Login" asp-controller="Login" asp-action="Login">
+                <input type="submit" value="Login">
             }
         </div>
     </div>
