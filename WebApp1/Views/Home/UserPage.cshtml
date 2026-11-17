@@ -1,32 +1,39 @@
-﻿@model Users
-
+@model Users
 @{
-    ViewBag.Title = "Register User";
+    ViewData["Title"] = "Directory";
 }
 
-<body>
-    <div class="Register">
-        <div class="wrapper">
-    <h2>Add User to System</h2>
+<div class="page-head">
+    <h1>Directory</h1>
+    <p>Add a name to the user table</p>
+</div>
 
-    @if (!String.IsNullOrEmpty(ViewBag.Message))
-    {
-    <div>@ViewBag.Message</div>
-    }
+<div class="auth">
+    <div class="auth__card">
+        <p class="auth__sub">
+            This form writes a single row to the <code>Users</code> table. It does not create a
+            login — client and admin accounts are the only way to sign in.
+        </p>
 
-@using (Html.BeginForm("RegisterUser", "Register", FormMethod.Post))
-{
-    @Html.AntiForgeryToken()
-    //@Html.LabelFor(m => m.Id)
-    //@Html.TextBoxFor(m => m.Id)
-    //<br>
+        @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+        {
+            <div class="summary-errors" role="alert">@ViewBag.Message</div>
+        }
 
-    @Html.LabelFor(m => m.name)
-    @Html.TextBoxFor(m => m.name)
-    <br>
+        <form class="auth__form" asp-controller="Register" asp-action="RegisterUser" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="summary-errors"></div>
 
-                <input type="submit" value="Submit">
-}
-        </div>
+            <div class="field">
+                <label class="field__label" asp-for="name">Name</label>
+                <input class="field__control" asp-for="name" autocomplete="off" maxlength="100" required />
+                <span class="field__error" asp-validation-for="name"></span>
+            </div>
+
+            <button class="btn btn--primary btn--block" type="submit">Add name</button>
+        </form>
     </div>
-</body>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

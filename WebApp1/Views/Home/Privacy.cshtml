@@ -1,32 +1,48 @@
-﻿@{
+@{
     ViewData["Title"] = "Privacy";
 }
-<body>
-    <header><h1>@ViewData["Title"]</h1></header>
-    <style>
-        .Privacy
-        {
-            margin: auto;
-            text-align:center;
-            width: 80%;
-            border: 3px solid #5372F0;
-            background-color: black;
-            opacity: 0.6;
-            padding: 10px;
-        }
-    </style>
-    <h2>
-        <p>
-            <div class="Privacy">
-                Welcome to Weather Seeker <br/><br />
-                This Privacy Policy outlines how your information is collected and used when operating this Application<br /><br />
-                When you register as a user/client/admin we collect your name, username, and password to facilitate your login process<br /><br />
-                Your name, username, and password is used to authenticate your identity as a user and provide you access to services<br /><br />
-                Only use information that is disposable and won't pose security risks <br /><br />
-                By using our App, you consent to the collection and use of your information as outlined in this Privacy Policy<br /><br />
-                Please read this Privacy Policy carefully to understand our practices regarding your information
-            </div>
-        </p>
-    </h2>
-<p></p>
-</body>
+
+<div class="page-head">
+    <h1>Privacy</h1>
+    <p>What is stored, and why</p>
+</div>
+
+<div class="prose">
+    <p>
+        Weather Seeker stores as little as it can. There is no advertising, no analytics service,
+        and no third-party tracker on any page.
+    </p>
+
+    <h2>Account data</h2>
+    <ul>
+        <li><strong>Username</strong> — stored so you can sign in, and shown in the header while you are signed in.</li>
+        <li><strong>Password</strong> — stored only as a one-way hash. The original text is never written to disk or logged.</li>
+        <li><strong>Account ID</strong> — assigned by the database when the account is created.</li>
+    </ul>
+
+    <h2>Session</h2>
+    <p>
+        Signing in sets a single authentication cookie. It is <code>HttpOnly</code>, <code>Secure</code>,
+        <code>SameSite=Lax</code>, and expires after eight hours of inactivity. Signing out removes it.
+    </p>
+
+    <h2>Location</h2>
+    <p>
+        The <em>Use my location</em> button asks the browser for a position, and only when pressed.
+        The coordinates are sent to this server and forwarded to OpenWeatherMap to find the nearest
+        station. They are not stored.
+    </p>
+
+    <h2>Weather lookups</h2>
+    <p>
+        City names you search are sent to OpenWeatherMap through this server. Searches are cached for a
+        short period to reduce repeat calls; the cache is not tied to your account and is never used to
+        build a profile.
+    </p>
+
+    <h2>Your choices</h2>
+    <p>
+        Use a disposable username and a unique password. If you want an account removed, ask the
+        site operator to delete the row — there is no self-service deletion form yet.
+    </p>
+</div>

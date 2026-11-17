@@ -1,65 +1,174 @@
-using WebApp1.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using WebApp1.Data;
+using WebApp1.Models;
 
 LoadDotEnv();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 var mvcBuilder = builder.Services.AddControllersWithViews();
 if (builder.Environment.IsDevelopment())
 {
     mvcBuilder.AddRazorRuntimeCompilation();
 }
 
-var postgresConnectionString = BuildPostgresConnectionString(builder.Configuration);
-builder.Services.AddDbContext<DBContext>(options => options.UseNpgsql(postgresConnectionString));
+builder.Services.AddMemoryCache();
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+builder.Services.AddDbContext<DBContext>(options =>
+    options.UseNpgsql(BuildPostgresConnectionString(builder.Configuration)));
+
+builder.Services
+    .AddHttpClient("openweathermap", client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(10);
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("WeatherSeeker/2.0");
+    })
+    // Redirects are refused so a compromised upstream cannot bounce us to
+    // an internal address.
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AllowAutoRedirect = false
+    });
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
+        // Production runs behind TLS (Cloudflare or a reverse proxy) so the
+        // __Host- prefix and a Secure cookie are enforced. Local HTTP debugging
+        // would silently drop such a cookie, so development relaxes them.
+        var useSecureCookie = !builder.Environment.IsDevelopment();
+
+        options.Cookie.Name = useSecureCookie
+            ? "__Host-WeatherSeeker.Auth"
+            : "WeatherSeeker.Dev.Auth";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = useSecureCookie
+            ? CookieSecurePolicy.Always
+            : CookieSecurePolicy.SameAsRequest;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.IsEssential = true;
         options.LoginPath = "/Home/Login";
         options.AccessDeniedPath = "/Home/Login";
-        options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.ReturnUrlParameter = string.Empty;
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
+
+// Credential stuffing protection: a small fixed window per client address on
+// the login endpoint only, so ordinary browsing is untouched.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
+
+    // Sign-up writes a row, so it is capped harder than a login attempt.
+    options.AddPolicy("signup", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromHours(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
+});
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
+    options.ForwardLimit = 2;
+
+    // Trust only the addresses the operator declares. The previous build cleared
+    // KnownProxies entirely, which let any caller forge X-Forwarded-For.
     options.KnownProxies.Clear();
+    options.KnownNetworks.Clear();
+
+    foreach (var proxy in ReadTrustedProxies(builder.Configuration))
+    {
+        if (IPAddress.TryParse(proxy, out var address))
+        {
+            options.KnownProxies.Add(address);
+        }
+        else
+        {
+            options.KnownNetworks.Add(Microsoft.AspNetCore.HttpOverrides.IPNetwork.Parse(proxy));
+        }
+    }
 });
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<DBContext>();
-    dbContext.Database.Migrate();
-}
+await ApplyMigrationsAsync(app);
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseForwardedHeaders();
+
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Cross-Origin-Opener-Policy"] = "same-origin";
+    headers["Cross-Origin-Resource-Policy"] = "same-origin";
+    headers["Permissions-Policy"] = "geolocation=(self), camera=(), microphone=(), payment=(), usb=()";
+    headers["X-Permitted-Cross-Domain-Policies"] = "none";
+    headers["Content-Security-Policy"] = ContentSecurityPolicy;
+
+    await next();
+});
+
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = staticFile =>
+    {
+        // Static assets are fingerprint-versioned by asp-append-version, so a
+        // long cache lifetime is safe for everything except HTML.
+        staticFile.Context.Response.Headers.CacheControl =
+            app.Environment.IsDevelopment()
+                ? "no-cache"
+                : "public,max-age=604800";
+    }
+});
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -69,6 +178,83 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+static async Task ApplyMigrationsAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var dbContext = scope.ServiceProvider.GetRequiredService<DBContext>();
+
+    try
+    {
+        await dbContext.Database.MigrateAsync();
+    }
+    catch (Exception ex)
+    {
+        // A database blip must not take the whole site down at boot; the error
+        // is logged and the request pipeline reports the failure per request.
+        logger.LogError(ex, "Database migration failed at startup.");
+        return;
+    }
+
+    await EnsureBootstrapAdminAsync(scope.ServiceProvider, logger);
+}
+
+static async Task EnsureBootstrapAdminAsync(IServiceProvider services, ILogger logger)
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    var section = configuration.GetSection("BOOTSTRAP_ADMIN");
+    var username = section["USERNAME"]?.Trim();
+    var password = section["PASSWORD"];
+
+    if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+    {
+        return;
+    }
+
+    // Password is only accepted from configuration and never echoed back.
+    if (password.Length < 12)
+    {
+        logger.LogWarning("BOOTSTRAP_ADMIN__PASSWORD is shorter than 12 characters; skipping admin seed.");
+        return;
+    }
+
+    var dbContext = services.GetRequiredService<DBContext>();
+
+    if (await dbContext.Admins.AnyAsync(a => a.username == username))
+    {
+        return;
+    }
+
+    var hasher = new PasswordHasher<string>();
+    var user = new Users { name = username };
+    dbContext.Users.Add(user);
+    await dbContext.SaveChangesAsync();
+
+    dbContext.Admins.Add(new Admins
+    {
+        Id = user.Id,
+        username = username,
+        password = hasher.HashPassword(username, password)
+    });
+
+    await dbContext.SaveChangesAsync();
+    logger.LogInformation("Bootstrap admin account created for {Username}.", username);
+}
+
+static IEnumerable<string> ReadTrustedProxies(IConfiguration configuration)
+{
+    var raw = configuration["TRUSTED_PROXIES"];
+
+    if (string.IsNullOrWhiteSpace(raw))
+    {
+        return Array.Empty<string>();
+    }
+
+    return raw
+        .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(entry => !string.IsNullOrWhiteSpace(entry));
+}
 
 static string BuildPostgresConnectionString(IConfiguration configuration)
 {
@@ -147,4 +333,21 @@ static void LoadDotEnv()
 
         currentDirectory = currentDirectory.Parent;
     }
+}
+
+partial class Program
+{
+    // Everything the pages actually load: same-origin assets, the inline weather
+    // icon sprite, and the SVG `use` references. No remote scripts or fonts.
+    private const string ContentSecurityPolicy =
+        "default-src 'self'; " +
+        "script-src 'self'; " +
+        "style-src 'self'; " +
+        "img-src 'self' data:; " +
+        "font-src 'self'; " +
+        "connect-src 'self'; " +
+        "form-action 'self'; " +
+        "frame-ancestors 'none'; " +
+        "base-uri 'self'; " +
+        "object-src 'none'";
 }

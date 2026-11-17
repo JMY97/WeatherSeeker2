@@ -32,6 +32,20 @@ Edit `.env` and set at minimum:
 
 For Docker Compose on the default network, keep `POSTGRES_HOST=postgres` unless you intentionally rename the database service.
 
+### First admin account
+
+The admin registration page requires an existing admin, so a fresh deployment
+has no way in. Seed one on first start:
+
+```text
+BOOTSTRAP_ADMIN__USERNAME=<name>
+BOOTSTRAP_ADMIN__PASSWORD=<12+ character passphrase>
+```
+
+The app creates the account only when no admin with that username exists, then
+logs `Bootstrap admin account created`. Remove both lines from `.env` once you
+have signed in; the row stays in the database.
+
 ## 3) Run application + database
 
 ```powershell
@@ -41,6 +55,9 @@ docker compose up -d --build
 App will be available at:
 
 - `http://localhost:8080`
+
+The port is published on the loopback interface only. Public access is meant to
+arrive through the Cloudflare Tunnel below.
 
 ## 4) Cloudflare public exposure
 
@@ -64,12 +81,25 @@ docker compose --profile cloudflare up -d
 - Service type: `HTTP`
 - URL: `webapp:8080`
 
+5. Tell the app which peer may set forwarded headers. The tunnel container
+   connects over the Compose bridge network, so trust that range:
+
+```text
+TRUSTED_PROXIES=172.16.0.0/12
+```
+
+Without this the app ignores `X-Forwarded-For`/`X-Forwarded-Proto`, and every
+visitor looks like the tunnel's own IP (which also collapses the login rate
+limiter into one shared bucket).
+
 ### Option B: Cloudflare DNS proxy to host
 
 1. Point an `A`/`AAAA` record to your host public IP.
 2. Enable proxy (orange cloud).
 3. Set SSL/TLS mode to `Full (strict)`.
 4. Ensure your origin serves TLS with a valid cert (or Cloudflare origin cert behind reverse proxy).
+5. Publish port 8080 beyond loopback, and set `TRUSTED_PROXIES` to your reverse
+   proxy's address.
 
 ## 5) Migrations and schema
 

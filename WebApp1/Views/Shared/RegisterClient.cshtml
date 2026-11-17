@@ -1,41 +1,45 @@
-﻿@model Clients
+@model Clients
 @{
-    ViewData["Title"] = "Register Client";
+    ViewData["Title"] = "Register client";
 }
-<!DOCTYPE html>
 
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Registration </title>
-</head>
-<body>
-    <div class="Register">
-       <div class="wrapper">
-        <h2>Client Registration</h2>
+<div class="auth">
+    <div class="auth__card">
+        <h1 class="auth__title">Client account</h1>
+        <p class="auth__sub">Pick a username and password. Your account ID is assigned automatically.</p>
 
-            @if (!String.IsNullOrEmpty(ViewBag.Message))
-            {
-                <div>@ViewBag.Message</div>
-            }
+        @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+        {
+            <div class="summary-errors" role="alert">@ViewBag.Message</div>
+        }
 
-            @using (Html.BeginForm("RegisterClient", "Register", FormMethod.Post))
-            {
-                @Html.AntiForgeryToken()
+        <form class="auth__form" asp-controller="Register" asp-action="RegisterClient" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="summary-errors"></div>
 
-                @Html.LabelFor(m => m.username)
-                @Html.TextBoxFor(m => m.username)
-                <br>
+            <div class="field">
+                <label class="field__label" asp-for="username">Username</label>
+                <input class="field__control" asp-for="username" autocomplete="username"
+                       autocapitalize="none" spellcheck="false" required />
+                <span class="field__error" asp-validation-for="username"></span>
+            </div>
 
-                @Html.LabelFor(m => m.password)
-                @Html.PasswordFor(m => m.password)
-                <br>
+            <div class="field">
+                <label class="field__label" asp-for="password">Password</label>
+                <input class="field__control" asp-for="password" autocomplete="new-password" required />
+                <p class="field__hint">At least 12 characters. Length beats complexity.</p>
+                <span class="field__error" asp-validation-for="password"></span>
+            </div>
 
-                                <input type="submit" value="Register Client">
-            }
-      </div>
+            <button class="btn btn--primary btn--block" type="submit">Create account</button>
+        </form>
+
+        <div class="auth__foot">
+            <span>Already registered?</span>
+            <a asp-controller="Home" asp-action="Login">Log in</a>
+        </div>
     </div>
-</body>
-</html>
+</div>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

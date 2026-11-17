@@ -361,3 +361,16 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ---------------------------------------------------------------------------
+# Local secrets. .env holds the Postgres password, the OpenWeatherMap key and
+# the Cloudflare tunnel token, so it must never enter the repository.
+# .env.example is the tracked template.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+secrets.json

@@ -1,41 +1,40 @@
-﻿@model Admins
+@model Admins
 @{
-    ViewData["Title"] = "Register Admin";
+    ViewData["Title"] = "Register admin";
 }
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Registration </title>
-</head>
-<body>
-    <div class="Register">
-        <div class="wrapper">
-            <h2>Admin Registration</h2>
 
-            @if (!String.IsNullOrEmpty(ViewBag.Message))
-            {
-                <div>@ViewBag.Message</div>
-            }
+<div class="auth">
+    <div class="auth__card">
+        <h1 class="auth__title">Admin account</h1>
+        <p class="auth__sub">Admin accounts can create further admins. This form is only reachable by a signed-in admin.</p>
 
-            @using (Html.BeginForm("RegisterAdmin", "Register", FormMethod.Post))
-            {
-                @Html.AntiForgeryToken()
+        @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+        {
+            <div class="summary-errors" role="alert">@ViewBag.Message</div>
+        }
 
-                @Html.LabelFor(m => m.username)
-                @Html.TextBoxFor(m => m.username)
-                <br>
+        <form class="auth__form" asp-controller="Register" asp-action="RegisterAdmin" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="summary-errors"></div>
 
-                @Html.LabelFor(m => m.password)
-                @Html.PasswordFor(m => m.password)
-                <br>
+            <div class="field">
+                <label class="field__label" asp-for="username">Username</label>
+                <input class="field__control" asp-for="username" autocomplete="off"
+                       autocapitalize="none" spellcheck="false" required />
+                <span class="field__error" asp-validation-for="username"></span>
+            </div>
 
-                <input type="submit" value="Register Admin">
-            }
+            <div class="field">
+                <label class="field__label" asp-for="password">Password</label>
+                <input class="field__control" asp-for="password" autocomplete="new-password" required />
+                <p class="field__hint">At least 12 characters. Length beats complexity.</p>
+                <span class="field__error" asp-validation-for="password"></span>
+            </div>
 
-        </div>
+            <button class="btn btn--primary btn--block" type="submit">Create admin</button>
+        </form>
     </div>
-</body>
-</html>
+</div>
 
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

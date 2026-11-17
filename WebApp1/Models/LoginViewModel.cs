@@ -1,13 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebApp1.Models
 {
     public class LoginViewModel
     {
+        [Required(ErrorMessage = "Enter your username.")]
+        [StringLength(100)]
+        [Display(Name = "Username")]
+        public string Username { get; set; } = string.Empty;
 
-        public required string Username { get; set; }
-
+        [Required(ErrorMessage = "Enter your password.")]
+        [StringLength(256)]
         [DataType(DataType.Password)]
-        public required string Password { get; set; }
+        [Display(Name = "Password")]
+        public string Password { get; set; } = string.Empty;
     }
 }

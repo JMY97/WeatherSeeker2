@@ -1,16 +1,19 @@
-﻿@{
-    ViewData["Title"] = "Success Page";
+@{
+    ViewData["Title"] = "Registered";
 }
-<h1>@ViewData["Title"]</h1>
 
-<head>
-    <meta charset="utf-8" />
-    <title>Success Page</title>
-</head>
-<body>
-    <h2>Successful Registration</h2><br />
-    @if (!String.IsNullOrEmpty(ViewBag.Message))
-    {
-        <div>@ViewBag.Message</div>
-    }
-</body>
+<div class="auth">
+    <div class="auth__card">
+        <h1 class="auth__title">You&rsquo;re registered</h1>
+        <p class="auth__sub">Your account is ready. Sign in to open the console.</p>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+        {
+            <div class="summary-errors" role="status">@ViewBag.Message</div>
+        }
+
+        <div class="btn-row auth__foot">
+            <a class="btn btn--primary btn--block" asp-controller="Home" asp-action="Login">Go to log in</a>
+        </div>
+    </div>
+</div>

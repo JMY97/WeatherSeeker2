@@ -1,126 +1,138 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using WebApp1.Models;
-using WebApp1.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using WebApp1.Data;
+using WebApp1.Models;
 
 namespace WebApp1.Controllers
 {
     public class RegisterController : Controller
     {
         private readonly DBContext _dbContext;
+        private readonly ILogger<RegisterController> _logger;
         private readonly PasswordHasher<string> _passwordHasher = new();
 
-        public RegisterController(DBContext dbContext)
+        public RegisterController(DBContext dbContext, ILogger<RegisterController> logger)
         {
             _dbContext = dbContext;
+            _logger = logger;
         }
 
-        public ActionResult Success()
-        {
-            //ViewBag.Message = "Data inserted successfully";
-            return RedirectToAction("SuccessPage", "Home");
-        }
-
-        //Write to Database
         [HttpGet]
-        public IActionResult RegisterClient()
-        {
+        [AllowAnonymous]
+        public IActionResult RegisterClient() => RedirectToAction("RegisterClient", "Home");
 
-            return RedirectToAction("RegisterClient", "Home");
-        }
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [AllowAnonymous]
+        [EnableRateLimiting("signup")]
         public async Task<IActionResult> RegisterClient(Clients user)
         {
-            ModelState.Remove("Id");
-            if (ModelState.IsValid)
-            {
-                var existingClient = await _dbContext.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.username == user.username);
-                if (existingClient != null)
-                {
-                    ModelState.AddModelError("username", "Username is already taken.");
-                    ViewBag.Message = "Username is already taken.";
-                    return View(user);
-                }
+            ModelState.Remove(nameof(Clients.Id));
+            ModelState.Remove(nameof(Clients.ClientId));
 
-                var newUser = new Users { name = user.username };
-                _dbContext.Users.Add(newUser);
-                await _dbContext.SaveChangesAsync();
-                user.Id = newUser.Id;
-
-                user.password = _passwordHasher.HashPassword(user.username, user.password);
-                _dbContext.Clients.Add(user);
-                await _dbContext.SaveChangesAsync();
-                ViewBag.Message = "Client data inserted successfully. Your ClientID: " + user.ClientId;
-                return View(user);
-            }
-            else
+            if (!ModelState.IsValid)
             {
-                ViewBag.Message = "There are some errors on the page";
-                return View(user);
+                return View("~/Views/Shared/RegisterClient.cshtml", user);
             }
+
+            var username = user.username.Trim();
+
+            if (await _dbContext.Clients.AnyAsync(c => c.username == username) ||
+                await _dbContext.Admins.AnyAsync(a => a.username == username))
+            {
+                ModelState.AddModelError(nameof(Clients.username), "Username is already taken.");
+                ViewBag.Message = "Username is already taken.";
+                return View("~/Views/Shared/RegisterClient.cshtml", user);
+            }
+
+            var newUser = new Users { name = username };
+            _dbContext.Users.Add(newUser);
+            await _dbContext.SaveChangesAsync();
+
+            user.Id = newUser.Id;
+            user.username = username;
+            user.password = _passwordHasher.HashPassword(username, user.password);
+
+            _dbContext.Clients.Add(user);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Client account {Username} created.", username);
+
+            ViewBag.Message = $"Account created. Your client ID is {user.ClientId}.";
+            return View("~/Views/Shared/SuccessPage.cshtml");
         }
 
         [HttpGet]
-        public IActionResult RegisterAdmin()
-        {
-            return RedirectToAction("RegisterAdmin", "Home");
-        }
+        [Authorize(Policy = "AdminOnly")]
+        public IActionResult RegisterAdmin() => RedirectToAction("RegisterAdmin", "Home");
+
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> RegisterAdmin(Admins user)
         {
-            ModelState.Remove("Id");
-            if (ModelState.IsValid)
-            {
-                var existingAdmin = await _dbContext.Admins.AsNoTracking().FirstOrDefaultAsync(a => a.username == user.username);
-                if (existingAdmin != null)
-                {
-                    ModelState.AddModelError("username", "Username is already taken.");
-                    ViewBag.Message = "Username is already taken.";
-                    return View(user);
-                }
+            ModelState.Remove(nameof(Admins.Id));
+            ModelState.Remove(nameof(Admins.AdminId));
 
-                var newUser = new Users { name = user.username };
-                _dbContext.Users.Add(newUser);
-                await _dbContext.SaveChangesAsync();
-                user.Id = newUser.Id;
-
-                user.password = _passwordHasher.HashPassword(user.username, user.password);
-                _dbContext.Admins.Add(user);
-                await _dbContext.SaveChangesAsync();
-                ViewBag.Message = "Admin data inserted successfully. Your AdminID: " + user.AdminId;
-                return View(user);
-            }
-            else
+            if (!ModelState.IsValid)
             {
-                ViewBag.Message = "There are some errors on the page";
-                return View(user);
+                return View("~/Views/Shared/RegisterAdmin.cshtml", user);
             }
+
+            var username = user.username.Trim();
+
+            if (await _dbContext.Admins.AnyAsync(a => a.username == username) ||
+                await _dbContext.Clients.AnyAsync(c => c.username == username))
+            {
+                ModelState.AddModelError(nameof(Admins.username), "Username is already taken.");
+                ViewBag.Message = "Username is already taken.";
+                return View("~/Views/Shared/RegisterAdmin.cshtml", user);
+            }
+
+            var newUser = new Users { name = username };
+            _dbContext.Users.Add(newUser);
+            await _dbContext.SaveChangesAsync();
+
+            user.Id = newUser.Id;
+            user.username = username;
+            user.password = _passwordHasher.HashPassword(username, user.password);
+
+            _dbContext.Admins.Add(user);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "Admin account {Username} created by {Actor}.",
+                username,
+                User.Identity?.Name);
+
+            ViewBag.Message = $"Admin account created. Its admin ID is {user.AdminId}.";
+            return View("~/Views/Shared/SuccessPage.cshtml");
         }
 
         [HttpGet]
-        public IActionResult RegisterUser()
-        {
-            return RedirectToAction("UserPage", "Home");
-        }
+        [Authorize]
+        public IActionResult RegisterUser() => RedirectToAction("UserPage", "Home");
+
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> RegisterUser(Users user)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                _dbContext.Users.Add(user);
-                await _dbContext.SaveChangesAsync();
-                ViewBag.Message = "Hello " + user.name + ", your Id is " + user.Id;
+                return View("~/Views/Home/UserPage.cshtml", user);
             }
-            else
-            {
-                ViewBag.Message = "There are some errors on the page";
-                return View(user);
-            }
-            return View(user);
+
+            var newUser = new Users { name = user.name.Trim() };
+            _dbContext.Users.Add(newUser);
+            await _dbContext.SaveChangesAsync();
+
+            ViewBag.Message = $"Added {newUser.name} to the directory as ID {newUser.Id}.";
+            ModelState.Clear();
+            return View("~/Views/Home/UserPage.cshtml", new Users { name = string.Empty });
         }
     }
 }

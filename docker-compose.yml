@@ -33,8 +33,13 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
       POSTGRES_SSL_MODE: ${POSTGRES_SSL_MODE:-Disable}
       OpenWeatherMap__ApiKey: ${OPENWEATHERMAP__APIKEY:-}
+      BOOTSTRAP_ADMIN__USERNAME: ${BOOTSTRAP_ADMIN__USERNAME:-}
+      BOOTSTRAP_ADMIN__PASSWORD: ${BOOTSTRAP_ADMIN__PASSWORD:-}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
     ports:
-      - "8080:8080"
+      # Bound to loopback: public traffic is meant to arrive through the
+      # Cloudflare Tunnel, not directly on the host's network interface.
+      - "127.0.0.1:8080:8080"
 
   cloudflared:
     image: cloudflare/cloudflared:latest

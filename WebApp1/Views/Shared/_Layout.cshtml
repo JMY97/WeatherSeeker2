@@ -1,89 +1,121 @@
-﻿@using System.Text.Json
-@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAdmin = User.IsInRole("Admin");
+    var pageTitle = ViewData["Title"] as string;
 
+    string? Current(string action) =>
+        string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? "page" : null;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Weather Seeker</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@pageTitle &middot; Weather Seeker</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/WebApp1.styles.css" asp-append-version="true" />
+    <script src="~/js/theme-boot.js" asp-append-version="true"></script>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">WS</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Weather</a>
-                            </li>
-                        }
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="About">About</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="UserPage">User Page</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="RegisterClient">Register Client</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="RegisterAdmin">Register Admin</a>
-                        </li>
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">@User.Identity.Name</span>
-                            </li>
-                            <li class="nav-item">
-                                <form asp-controller="Login" asp-action="Logout" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-link nav-link text-dark p-0">Logout</button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Login">Login</a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <a class="skip-link" href="#main">Skip to content</a>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - Weather Seeker - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <header class="topbar" id="topbar" data-nav-open="false">
+        <div class="shell topbar__inner">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <span class="brand__mark" aria-hidden="true"></span>
+                <span class="brand__name">Weather<em>Seeker</em></span>
+            </a>
+
+            <nav class="nav" id="primary-nav" aria-label="Primary">
+                <ul class="nav__list">
+                    @if (isAuthenticated)
+                    {
+                        <li>
+                            <a class="nav__link" asp-controller="Home" asp-action="Index"
+                               aria-current="@Current("Index")">Console</a>
+                        </li>
+                    }
+                    <li>
+                        <a class="nav__link" asp-controller="Home" asp-action="About"
+                           aria-current="@Current("About")">About</a>
+                    </li>
+                    <li>
+                        <a class="nav__link" asp-controller="Home" asp-action="Privacy"
+                           aria-current="@Current("Privacy")">Privacy</a>
+                    </li>
+                    @if (isAuthenticated)
+                    {
+                        <li>
+                            <a class="nav__link" asp-controller="Home" asp-action="UserPage"
+                               aria-current="@Current("UserPage")">Directory</a>
+                        </li>
+                    }
+                    @if (isAdmin)
+                    {
+                        <li>
+                            <a class="nav__link" asp-controller="Home" asp-action="RegisterAdmin"
+                               aria-current="@Current("RegisterAdmin")">New admin</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+
+            <div class="topbar__tools">
+                <button class="icon-btn" type="button" id="theme-toggle" aria-label="Switch to dark theme"
+                        aria-pressed="false" title="Switch theme">
+                    <svg class="icon-btn__moon" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                         stroke-width="1.5" aria-hidden="true">
+                        <path d="M13.5 9.6A6 6 0 0 1 6.4 2.5a6 6 0 1 0 7.1 7.1Z" stroke-linejoin="round" />
+                    </svg>
+                    <svg class="icon-btn__sun" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                         stroke-width="1.5" aria-hidden="true">
+                        <circle cx="8" cy="8" r="3" />
+                        <path d="M8 1v2m0 10v2M1 8h2m10 0h2M3.1 3.1l1.4 1.4m7 7l1.4 1.4m0-9.8l-1.4 1.4m-7 7l-1.4 1.4"
+                              stroke-linecap="round" />
+                    </svg>
+                </button>
+
+                @if (isAuthenticated)
+                {
+                    <span class="account__name" title="@User.Identity!.Name">@User.Identity.Name</span>
+                    <form asp-controller="Login" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn--quiet">Log out</button>
+                    </form>
+                }
+                else
+                {
+                    <a class="btn btn--primary" asp-controller="Home" asp-action="Login">Log in</a>
+                }
+
+                <button class="icon-btn nav-toggle" type="button" id="nav-toggle"
+                        aria-controls="primary-nav" aria-expanded="false" aria-label="Open menu">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                        <path d="M2 4h12M2 8h12M2 12h12" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main" id="main" role="main">
+        <div class="shell">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="shell footer__inner">
+            <p class="footer__meta">&copy; @DateTime.UtcNow.Year Weather Seeker</p>
+            <nav aria-label="Footer">
+                <a asp-controller="Home" asp-action="About">About</a>
+                <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+                <a href="https://openweathermap.org/api" rel="noopener noreferrer" target="_blank">Data source</a>
+            </nav>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        window.weatherSeekerConfig = {
-            openWeatherMapApiKey: @Html.Raw(JsonSerializer.Serialize(Configuration["OpenWeatherMap:ApiKey"]))
-        };
-    </script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

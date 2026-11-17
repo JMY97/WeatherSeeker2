@@ -1,113 +1,135 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Console";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Weather App Project</title>
-    <link rel="stylesheet" href="style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-    <style>
-        .container
-        {
-            margin: auto;
-            
-        }
-    </style>
-    <header><h1>Weather Seeker</h1></header>
-    @if (!String.IsNullOrEmpty(ViewBag.Message))
-    {
-        <div style="color: white">@ViewBag.Message</div>
-    }
-    <div class="container">
-        <div class="weather-input">
-            <h3>Enter a City Name</h3>
-            <input class="city-input" type="text" placeholder="E.g., New York, London, Tokyo">
-            <button class="search-btn">Search</button>
-            <div class="separator"></div>
-            <button class="location-btn">Use Current Location</button>
-        </div>
-        
-        <div class="weather-input">
-            <h3>Enter a Temperature in Celsius</h3>
-            <input class="Cels-input" type="number" id="celsius" placeholder="Degrees">
-            <button type="button" id="calc" onclick="calcTemp()">Calculate</button><br /><br />
-            <script>
-                function calcTemp() {
+@await Html.PartialAsync("_WeatherIcons")
 
-                    // initialising
-                    let celsius = document.getElementById("celsius").value;
-                    let fahrenheit;
+<div class="page-head">
+    <h1>Station console</h1>
+    <p>OpenWeatherMap &middot; five-day outlook</p>
+</div>
 
-                    // formula for conversion
-                    fahrenheit = (celsius * 1.8) + 32;
+<div class="console">
+    <aside class="console__rail" aria-label="Controls">
+        <section class="panel" aria-labelledby="search-heading">
+            <h2 class="panel__title" id="search-heading">Observe</h2>
 
-                    // Print to Page
-                    console.log(fahrenheit);
-                    document.getElementById("output").textContent = fahrenheit;
-                    return false;
-                }
-            </script>
-            <h2><output class="Cels-output" type="number" id="output">Results</output>
-            <style>
-                p {
-                    display: inline;
-                }
-            </style>
-            <p>°F</p>
-            </h2>
-            
-        </div>
-        <div class="weather-data">
-            <div class="current-weather">
-                <div class="details">
-                    <h2>_______ ( ______ )</h2>
-                    <h6>Temperature: __°C</h6>
-                    <h6>Wind: __ M/S</h6>
-                    <h6>Humidity: __%</h6>
+            <form id="search-form" role="search" novalidate>
+                <div class="field">
+                    <label class="field__label" for="city">City</label>
+                    <input class="field__control" id="city" name="city" type="search" autocomplete="off"
+                           spellcheck="false" maxlength="100" placeholder="Reykjavík"
+                           aria-describedby="city-hint" />
+                    <p class="field__hint" id="city-hint">Enter a name, or name and country code.</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn--primary btn--block" type="submit" id="search-btn">Read conditions</button>
+                    <button class="btn btn--block" type="button" id="location-btn">Use my location</button>
+                </div>
+            </form>
+
+            <div class="notice" id="notice" role="status" aria-live="polite" hidden>
+                <span class="notice__k" id="notice-key">Note</span>
+                <span class="notice__v" id="notice-text"></span>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="convert-heading">
+            <h2 class="panel__title" id="convert-heading">Convert</h2>
+
+            <div class="convert">
+                <div class="field">
+                    <label class="field__label" for="celsius">Celsius</label>
+                    <input class="field__control" id="celsius" type="number" inputmode="decimal"
+                           step="0.1" placeholder="18" />
+                </div>
+
+                <div class="convert__arrow" aria-hidden="true">&rarr;</div>
+
+                <div class="field">
+                    <span class="field__label" id="fahrenheit-label">Fahrenheit</span>
+                    <output class="convert__out" id="fahrenheit" for="celsius"
+                            aria-labelledby="fahrenheit-label">
+                        <span>&mdash;</span>
+                    </output>
                 </div>
             </div>
-            <div class="days-forecast">
-                <h2>5-Day Forecast</h2>
-                <ul class="weather-cards">
-                    <li class="card">
-                        <h3>( ______ )</h3>
-                        <h6>Temp: __C</h6>
-                        <h6>Wind: __ M/S</h6>
-                        <h6>Humidity: __%</h6>
-                    </li>
-                    <li class="card">
-                        <h3>( ______ )</h3>
-                        <h6>Temp: __C</h6>
-                        <h6>Wind: __ M/S</h6>
-                        <h6>Humidity: __%</h6>
-                    </li>
-                    <li class="card">
-                        <h3>( ______ )</h3>
-                        <h6>Temp: __C</h6>
-                        <h6>Wind: __ M/S</h6>
-                        <h6>Humidity: __%</h6>
-                    </li>
-                    <li class="card">
-                        <h3>( ______ )</h3>
-                        <h6>Temp: __C</h6>
-                        <h6>Wind: __ M/S</h6>
-                        <h6>Humidity: __%</h6>
-                    </li>
-                    <li class="card">
-                        <h3>( ______ )</h3>
-                        <h6>Temp: __C</h6>
-                        <h6>Wind: __ M/S</h6>
-                        <h6>Humidity: __%</h6>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </div>
+        </section>
+    </aside>
 
-</body>
-</html>
+    <div class="console__readout" id="readout">
+        <section class="current" id="current" aria-labelledby="current-station">
+            <div class="current__body">
+                <p class="current__eyebrow">
+                    <span>Current</span>
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="current__station" id="current-station">No station selected</span>
+                </p>
+
+                <p class="current__head">
+                    <span class="current__temp" id="current-temp">&mdash;&mdash;</span>
+                    <span class="current__unit" aria-hidden="true">&deg;C</span>
+                </p>
+
+                <p class="current__cond" id="current-cond">Read a city to load its latest observation.</p>
+                <p class="current__stamp" id="current-stamp">Awaiting first reading</p>
+            </div>
+
+            <div class="current__icon" aria-hidden="true">
+                <svg class="weather-icon" viewBox="0 0 64 64" id="current-icon">
+                    <use href="#wi-01d" />
+                </svg>
+            </div>
+
+            <dl class="current__stats">
+                <div class="stat">
+                    <dt class="stat__k">Feels like</dt>
+                    <dd class="stat__v" id="stat-feels">&mdash;<span class="stat__u">&deg;C</span></dd>
+                </div>
+                <div class="stat">
+                    <dt class="stat__k">Wind</dt>
+                    <dd class="stat__v" id="stat-wind">&mdash;<span class="stat__u">m/s</span></dd>
+                </div>
+                <div class="stat">
+                    <dt class="stat__k">Humidity</dt>
+                    <dd class="stat__v" id="stat-humidity">&mdash;<span class="stat__u">%</span></dd>
+                </div>
+                <div class="stat">
+                    <dt class="stat__k">Pressure</dt>
+                    <dd class="stat__v" id="stat-pressure">&mdash;<span class="stat__u">hPa</span></dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="forecast" aria-labelledby="forecast-heading">
+            <div class="forecast__head">
+                <h2 id="forecast-heading">Five-day outlook</h2>
+                <p class="forecast__meta" id="forecast-meta">Awaiting station</p>
+            </div>
+
+            <p class="meteogram meteogram--empty" id="meteogram-empty">
+                The temperature trace appears once a station is read
+            </p>
+
+            <figure class="meteogram" id="meteogram" hidden>
+                <figcaption class="sr-only">Daily high and low temperature trace</figcaption>
+                <svg id="meteogram-svg" viewBox="0 0 600 140" preserveAspectRatio="none"
+                     role="img" aria-label="Daily high and low temperature trace"></svg>
+            </figure>
+
+            <ul class="forecast__days" id="forecast-days">
+                @for (var i = 0; i < 5; i++)
+                {
+                    <li class="day">
+                        <span class="day__name ph"></span>
+                        <span class="day__date ph"></span>
+                        <span class="day__icon ph ph--icon-sm"></span>
+                        <span class="day__temp ph ph--temp"></span>
+                        <span class="day__cond ph"></span>
+                    </li>
+                }
+            </ul>
+        </section>
+    </div>
+</div>
