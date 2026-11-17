@@ -27,36 +27,40 @@ namespace WebApp1.Controllers
         public IActionResult Privacy() => View();
 
         [HttpGet]
-        [Authorize]
-        public IActionResult UserPage() => View();
-
-        [HttpGet]
         [AllowAnonymous]
-        public IActionResult RegisterClient() => View();
-
-        /// <summary>
-        /// Admin creation is restricted to existing admins. New deployments seed
-        /// their first admin from BOOTSTRAP_ADMIN__USERNAME / __PASSWORD.
-        /// </summary>
-        [HttpGet]
-        [Authorize(Policy = "AdminOnly")]
-        public IActionResult RegisterAdmin() => View();
-
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult SuccessPage() => View();
-
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl)
         {
             if (User.Identity?.IsAuthenticated == true)
             {
                 return RedirectToAction(nameof(Index));
             }
 
-            return View();
+            ViewBag.ReturnUrl = SafeLocalUrl(returnUrl);
+
+            return View("~/Views/Shared/Login.cshtml", new LoginViewModel());
         }
+
+        /// <summary>
+        /// Returns the path only when it is a site-relative URL, so a crafted
+        /// returnUrl cannot send a freshly signed-in user to another origin.
+        /// </summary>
+        internal static string? SafeLocalUrl(string? url) =>
+            !string.IsNullOrWhiteSpace(url)
+            && url.Length > 1
+            && url[0] == '/'
+            && url[1] != '/'
+            && url[1] != '\\'
+            && !url.Contains("://", StringComparison.Ordinal)
+                ? url
+                : null;
+
+        /// <summary>
+        /// Shown after an account deletes itself. Anonymous on purpose: the session
+        /// is already gone, so this page confirms rather than protects.
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Deleted() => View();
 
         [HttpGet]
         [AllowAnonymous]

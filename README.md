@@ -9,10 +9,11 @@ drawn as a temperature trace.
 - **Station console** — city search, "use my location", current conditions, and a
   five-day outlook rendered as a high/low temperature trace (requires login).
 - **Temperature converter** — Celsius to Fahrenheit, live on the console.
-- **Client self-registration** — users pick a username and password; the account
-  ID is assigned by the database.
-- **Admin management** — new admin accounts can only be created by an existing
-  admin, or seeded on first boot from configuration.
+- **Account self-registration** — users pick a username and password and are
+  signed in immediately. An account is a single row; there are no roles.
+- **Account deletion** — any signed-in account can delete itself from the
+  Account page, confirmed with its own password. The row is removed
+  immediately, there is no recovery, and the session ends on the next request.
 - **Login / Logout** — cookie-authenticated sessions (8-hour sliding expiry).
 - **Dark and light themes** — follows the OS preference, with a manual toggle.
 - **Route protection** — every data page redirects unauthenticated visitors.
@@ -35,16 +36,15 @@ drawn as a temperature trace.
 2. Create an OpenWeatherMap account and generate an API key from
    `https://openweathermap.org/api`.
 3. Set `OPENWEATHERMAP__APIKEY` in `.env` so the console can read conditions.
-4. Set `BOOTSTRAP_ADMIN__USERNAME` and `BOOTSTRAP_ADMIN__PASSWORD` to create the
-   first admin on startup (12+ character passphrase). Once you can sign in,
-   remove those two lines.
-5. Build and run:
+4. Build and run:
 
 ```powershell
 docker compose up -d --build
 ```
 
-6. Open `http://localhost:8080`.
+5. Open `http://localhost:8080` and create an account. There is no bootstrap
+   step: the first account is made through the public sign-up form, and every
+   account has the same (non-privileged) access.
 
 The app port is published on `127.0.0.1` only. Public traffic is expected to
 arrive through the Cloudflare Tunnel profile — see
@@ -99,13 +99,21 @@ psql -h <host> -p 5432 -U <user> -d <db> -f .\WebApp1\Migrations\InitialPostgres
 ### 4) Authentication & Authorization
 
 - Passwords are stored as one-way hashes using ASP.NET Core `PasswordHasher`.
-- Usernames must be 3–100 characters; passwords at least 12.
+- Usernames are stored lower-cased and must be 3–100 characters; passwords
+  12–256.
 - Login failures return one generic message, so an unknown username and a wrong
-  password are indistinguishable.
+  password are indistinguishable, and both paths pay the same key-derivation
+  cost so response time does not reveal which accounts exist.
 - Sign-in is rate limited to 10 attempts per 5 minutes per client address;
-  client sign-up to 5 per hour.
-- Logout is POST-only and CSRF-protected.
-- Admin registration requires the `Admin` role.
+  sign-up to 5 per hour; the weather proxy to 30 lookups per 10 minutes per
+  account, so one account cannot exhaust the shared API quota.
+- Logout is POST-only and CSRF-protected. It also rotates the account's stored
+  session version, so a cookie captured beforehand stops working immediately
+  instead of remaining valid until it expires.
+- Every request re-checks the account row. Deleting an account therefore ends
+  its sessions on the very next request.
+- There are no roles and no admin surface: every account has the same access and
+  can delete only itself.
 
 ### 5) Security headers
 

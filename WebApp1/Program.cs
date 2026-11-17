@@ -1,16 +1,13 @@
 using System.Net;
-using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using WebApp1.Controllers;
 using WebApp1.Data;
-using WebApp1.Models;
 
 LoadDotEnv();
 
@@ -61,14 +58,51 @@ builder.Services
         options.Cookie.IsEssential = true;
         options.LoginPath = "/Home/Login";
         options.AccessDeniedPath = "/Home/Login";
-        options.ReturnUrlParameter = string.Empty;
+        // Named so the redirect reads ?returnUrl=... instead of an anonymous ?=,
+        // which was a route-value bug. Honoured only when local (see
+        // LoginController), so it cannot become an open redirect.
+        options.ReturnUrlParameter = "returnUrl";
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+        // Deletion and sign-out must take effect on the next request, not when the
+        // cookie happens to expire. The row is the source of truth: if it is gone,
+        // or its session version moved on, the cookie is no longer valid.
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            var dbContext = context.HttpContext.RequestServices.GetRequiredService<DBContext>();
+            var id = AccountSession.GetAccountId(context.Principal!);
+
+            var account = id is null
+                ? null
+                : await dbContext.Accounts
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(a => a.Id == id.Value);
+
+            if (account is null || !AccountSession.MatchesSessionVersion(context.Principal!, account))
+            {
+                context.RejectPrincipal();
+                await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+        };
     });
 
-builder.Services.AddAuthorization(options =>
+// There are no roles: every account is an ordinary account that can read the
+// forecast and delete itself. Nothing here grants privileged access.
+builder.Services.AddAuthorization();
+
+// The antiforgery cookie is a credential too, so it should carry Secure
+// wherever the request is already HTTPS. Always is deliberately not used:
+// the antiforgery system throws if it must issue a Secure cookie on a request
+// it does not see as HTTPS, and behind a TLS-terminating proxy that is only
+// detected when TRUSTED_PROXIES is configured. A missing flag is a small
+// weakness; a 500 on every form is an outage.
+builder.Services.AddAntiforgery(options =>
 {
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
 });
 
 // Credential stuffing protection: a small fixed window per client address on
@@ -98,6 +132,21 @@ builder.Services.AddRateLimiter(options =>
                 Window = TimeSpan.FromHours(1),
                 QueueLimit = 0,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
+
+    // Every cache miss on the weather proxy spends the shared OpenWeatherMap key
+    // quota, so one account must not be able to drain it for everyone. Partitioned
+    // per account rather than per address so a shared NAT cannot starve a user.
+    options.AddPolicy("weather", context =>
+        RateLimitPartition.GetTokenBucketLimiter(
+            partitionKey: context.User.Identity?.Name ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = 30,
+                TokensPerPeriod = 30,
+                ReplenishmentPeriod = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+                AutoReplenishment = true
             }));
 });
 
@@ -194,52 +243,7 @@ static async Task ApplyMigrationsAsync(WebApplication app)
         // A database blip must not take the whole site down at boot; the error
         // is logged and the request pipeline reports the failure per request.
         logger.LogError(ex, "Database migration failed at startup.");
-        return;
     }
-
-    await EnsureBootstrapAdminAsync(scope.ServiceProvider, logger);
-}
-
-static async Task EnsureBootstrapAdminAsync(IServiceProvider services, ILogger logger)
-{
-    var configuration = services.GetRequiredService<IConfiguration>();
-    var section = configuration.GetSection("BOOTSTRAP_ADMIN");
-    var username = section["USERNAME"]?.Trim();
-    var password = section["PASSWORD"];
-
-    if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-    {
-        return;
-    }
-
-    // Password is only accepted from configuration and never echoed back.
-    if (password.Length < 12)
-    {
-        logger.LogWarning("BOOTSTRAP_ADMIN__PASSWORD is shorter than 12 characters; skipping admin seed.");
-        return;
-    }
-
-    var dbContext = services.GetRequiredService<DBContext>();
-
-    if (await dbContext.Admins.AnyAsync(a => a.username == username))
-    {
-        return;
-    }
-
-    var hasher = new PasswordHasher<string>();
-    var user = new Users { name = username };
-    dbContext.Users.Add(user);
-    await dbContext.SaveChangesAsync();
-
-    dbContext.Admins.Add(new Admins
-    {
-        Id = user.Id,
-        username = username,
-        password = hasher.HashPassword(username, password)
-    });
-
-    await dbContext.SaveChangesAsync();
-    logger.LogInformation("Bootstrap admin account created for {Username}.", username);
 }
 
 static IEnumerable<string> ReadTrustedProxies(IConfiguration configuration)

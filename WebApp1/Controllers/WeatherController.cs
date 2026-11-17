@@ -3,6 +3,7 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace WebApp1.Controllers
@@ -14,6 +15,7 @@ namespace WebApp1.Controllers
     /// </summary>
     [Authorize]
     [Route("weather")]
+    [EnableRateLimiting("weather")]
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public class WeatherController : Controller
     {

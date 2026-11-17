@@ -16,6 +16,11 @@
         <form class="auth__form" asp-controller="Login" asp-action="Login" method="post" novalidate>
             <div asp-validation-summary="ModelOnly" class="summary-errors"></div>
 
+            @if (ViewBag.ReturnUrl is string returnUrl)
+            {
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+            }
+
             <div class="field">
                 <label class="field__label" asp-for="Username">Username</label>
                 <input class="field__control" asp-for="Username" autocomplete="username"
@@ -34,7 +39,7 @@
 
         <div class="auth__foot">
             <span>No account yet?</span>
-            <a asp-controller="Home" asp-action="RegisterClient">Create a client account</a>
+            <a asp-controller="Register" asp-action="Register">Create an account</a>
         </div>
     </div>
 </div>

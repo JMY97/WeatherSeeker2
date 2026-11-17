@@ -1,11 +1,16 @@
 @{
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
-    var isAdmin = User.IsInRole("Admin");
     var pageTitle = ViewData["Title"] as string;
 
-    string? Current(string action) =>
-        string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? "page" : null;
+    string? Current(string controller, string action) =>
+        string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase)
+            ? "page"
+            : null;
+
+    string? CurrentAction(string action) => Current(currentController ?? "Home", action);
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -33,29 +38,22 @@
                     {
                         <li>
                             <a class="nav__link" asp-controller="Home" asp-action="Index"
-                               aria-current="@Current("Index")">Console</a>
+                               aria-current="@CurrentAction("Index")">Console</a>
                         </li>
                     }
                     <li>
                         <a class="nav__link" asp-controller="Home" asp-action="About"
-                           aria-current="@Current("About")">About</a>
+                           aria-current="@CurrentAction("About")">About</a>
                     </li>
                     <li>
                         <a class="nav__link" asp-controller="Home" asp-action="Privacy"
-                           aria-current="@Current("Privacy")">Privacy</a>
+                           aria-current="@CurrentAction("Privacy")">Privacy</a>
                     </li>
                     @if (isAuthenticated)
                     {
                         <li>
-                            <a class="nav__link" asp-controller="Home" asp-action="UserPage"
-                               aria-current="@Current("UserPage")">Directory</a>
-                        </li>
-                    }
-                    @if (isAdmin)
-                    {
-                        <li>
-                            <a class="nav__link" asp-controller="Home" asp-action="RegisterAdmin"
-                               aria-current="@Current("RegisterAdmin")">New admin</a>
+                            <a class="nav__link" asp-controller="Account" asp-action="Settings"
+                               aria-current="@Current("Account", "Settings")">Account</a>
                         </li>
                     }
                 </ul>

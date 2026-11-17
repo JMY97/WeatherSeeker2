@@ -32,19 +32,11 @@ Edit `.env` and set at minimum:
 
 For Docker Compose on the default network, keep `POSTGRES_HOST=postgres` unless you intentionally rename the database service.
 
-### First admin account
+### First account
 
-The admin registration page requires an existing admin, so a fresh deployment
-has no way in. Seed one on first start:
-
-```text
-BOOTSTRAP_ADMIN__USERNAME=<name>
-BOOTSTRAP_ADMIN__PASSWORD=<12+ character passphrase>
-```
-
-The app creates the account only when no admin with that username exists, then
-logs `Bootstrap admin account created`. Remove both lines from `.env` once you
-have signed in; the row stays in the database.
+There is no bootstrap step and no privileged account. Sign up through the
+public form on a fresh deployment; every account gets the same access, and any
+account can delete itself from the Account page.
 
 ## 3) Run application + database
 

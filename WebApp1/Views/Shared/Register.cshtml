@@ -1,0 +1,51 @@
+@model WebApp1.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Create account";
+}
+
+<div class="auth">
+    <div class="auth__card">
+        <h1 class="auth__title">Create account</h1>
+        <p class="auth__sub">Pick a username and password. That is all this account holds.</p>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+        {
+            <div class="summary-errors" role="alert">@ViewBag.Message</div>
+        }
+
+        <form class="auth__form" asp-controller="Register" asp-action="Register" method="post" novalidate>
+            <div asp-validation-summary="ModelOnly" class="summary-errors"></div>
+
+            <div class="field">
+                <label class="field__label" asp-for="Username">Username</label>
+                <input class="field__control" asp-for="Username" autocomplete="username"
+                       autocapitalize="none" spellcheck="false" required />
+                <span class="field__error" asp-validation-for="Username"></span>
+            </div>
+
+            <div class="field">
+                <label class="field__label" asp-for="Password">Password</label>
+                <input class="field__control" asp-for="Password" autocomplete="new-password" required />
+                <p class="field__hint">12 to 256 characters. Length beats complexity.</p>
+                <span class="field__error" asp-validation-for="Password"></span>
+            </div>
+
+            <div class="field">
+                <label class="field__label" asp-for="ConfirmPassword">Confirm password</label>
+                <input class="field__control" asp-for="ConfirmPassword" autocomplete="new-password" required />
+                <span class="field__error" asp-validation-for="ConfirmPassword"></span>
+            </div>
+
+            <button class="btn btn--primary btn--block" type="submit">Create account</button>
+        </form>
+
+        <div class="auth__foot">
+            <span>Already registered?</span>
+            <a asp-controller="Home" asp-action="Login">Log in</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

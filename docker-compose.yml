@@ -33,8 +33,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
       POSTGRES_SSL_MODE: ${POSTGRES_SSL_MODE:-Disable}
       OpenWeatherMap__ApiKey: ${OPENWEATHERMAP__APIKEY:-}
-      BOOTSTRAP_ADMIN__USERNAME: ${BOOTSTRAP_ADMIN__USERNAME:-}
-      BOOTSTRAP_ADMIN__PASSWORD: ${BOOTSTRAP_ADMIN__PASSWORD:-}
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
     ports:
       # Bound to loopback: public traffic is meant to arrive through the

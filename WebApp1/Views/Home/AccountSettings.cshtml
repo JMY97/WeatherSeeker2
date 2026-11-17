@@ -1,0 +1,51 @@
+@model WebApp1.Models.AccountSettingsViewModel
+@{
+    ViewData["Title"] = "Account";
+}
+
+<div class="auth">
+    <div class="auth__card">
+        <h1 class="auth__title">Account</h1>
+        <p class="auth__sub">This account is the only record Weather Seeker keeps about you.</p>
+
+        @if (!string.IsNullOrEmpty(ViewBag.Message as string))
+        {
+            <div class="summary-errors" role="alert">@ViewBag.Message</div>
+        }
+
+        <dl class="kv">
+            <div class="kv__row">
+                <dt>Username</dt>
+                <dd>@Model.Username</dd>
+            </div>
+            <div class="kv__row">
+                <dt>Created</dt>
+                <dd><time datetime="@Model.CreatedAt.ToString("O")">@Model.CreatedAt.ToString("dd MMM yyyy")</time></dd>
+            </div>
+            <div class="kv__row">
+                <dt>Password</dt>
+                <dd>Stored as a salted hash. It cannot be read back.</dd>
+            </div>
+        </dl>
+
+        <section class="danger" aria-labelledby="delete-heading">
+            <h2 class="danger__title" id="delete-heading">Delete this account</h2>
+            <p class="danger__body">
+                Removes this account and everything stored with it, immediately and permanently.
+                There is no recovery. Confirm with your password.
+            </p>
+
+            <form class="auth__form" asp-controller="Account" asp-action="Delete" method="post" novalidate>
+                <div asp-validation-summary="ModelOnly" class="summary-errors"></div>
+
+                <div class="field">
+                    <label class="field__label" asp-for="Password">Password</label>
+                    <input class="field__control" asp-for="Password" autocomplete="current-password" required />
+                    <span class="field__error" asp-validation-for="Password"></span>
+                </div>
+
+                <button class="btn btn--danger btn--block" type="submit">Delete account permanently</button>
+            </form>
+        </section>
+    </div>
+</div>

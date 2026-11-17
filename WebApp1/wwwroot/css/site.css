@@ -583,6 +583,20 @@ textarea {
   color: var(--ink);
 }
 
+/* Destructive action. Outlined, not solid, so it never outweighs the primary
+   action on the page; it fills with the same signal ink on hover. */
+.btn--danger {
+  background: transparent;
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.btn--danger:hover {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+}
+
 .btn--block {
   width: 100%;
 }
@@ -1109,6 +1123,64 @@ textarea {
 .summary-errors ul {
   display: grid;
   gap: var(--sp-1);
+}
+
+/* --------------------------------------------------------- account page -- */
+
+/* Definition list read as station data: label column in the data face, value
+   column in the UI face. */
+.kv {
+  display: grid;
+  gap: 0;
+  margin-top: var(--sp-5);
+  border-top: 1px solid var(--rule);
+}
+
+.kv__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) 2fr;
+  gap: var(--sp-4);
+  align-items: baseline;
+  padding-block: var(--sp-3);
+  border-bottom: 1px solid var(--rule);
+}
+
+/* The <dt>/<dd> elements are wrapped in a .kv__row div, so the grid
+   columns are assigned by position rather than descendant selector. */
+.kv__row > dt {
+  font-family: var(--font-data);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.kv__row > dd {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.danger {
+  display: grid;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+}
+
+.danger__title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+.danger__body {
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
 }
 
 /* -------------------------------------------------------------- footer -- */
